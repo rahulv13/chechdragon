@@ -1,0 +1,133 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Draglist application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "username": {
+          "type": "string",
+          "description": "The user's chosen username."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "dateJoined": {
+          "type": "string",
+          "description": "The date and time the user joined the application.",
+          "format": "date-time"
+        },
+        "secretPassword": {
+          "type": "string",
+          "description": "A user-defined password to protect their secret list."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "dateJoined"
+      ]
+    },
+    "Title": {
+      "title": "Title",
+      "type": "object",
+      "description": "Represents an anime or manga title in a user's list.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The official title."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Anime", "Manga", "Manhwa"],
+          "description": "The type of media."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Watching", "Reading", "Planned", "Completed"],
+          "description": "The user's current status for this title."
+        },
+        "progress": {
+          "type": "number",
+          "description": "Number of episodes/chapters watched/read."
+        },
+        "total": {
+          "type": "number",
+          "description": "Total number of episodes/chapters."
+        },
+        "score": {
+          "type": "number",
+          "description": "The user's personal score from 0-10."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL for the title's cover image."
+        },
+        "imageHint": {
+            "type": "string",
+            "description": "A hint for AI to find a relevant image."
+        },
+        "isSecret": {
+          "type": "boolean",
+          "description": "Whether the title is hidden in the secret section."
+        }
+      },
+      "required": ["title", "type", "status", "progress", "total", "imageUrl"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous",
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Path-based ownership is enforced.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+          "path": "/users/{userId}/titles/{titleId}",
+          "definition": {
+              "entityName": "Title",
+              "schema": { "$ref": "#/backend/entities/Title" },
+              "description": "Stores individual anime/manga titles for a user.",
+              "params": [
+                  {
+                      "name": "userId",
+                      "description": "The ID of the user who owns this title."
+                  },
+                  {
+                      "name": "titleId",
+                      "description": "The unique ID for the anime/manga title."
+                  }
+              ]
+          }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to facilitate a secure and scalable Draglist application, focusing on user authentication, progress tracking, and list management. The structure prioritizes authorization independence using denormalization. User data is stored in a dedicated collection, and since the application has no collaborative features, access control is straightforward, relying on path-based ownership. The `users/{userId}` path establishes the user's root, ensuring that other collections depend on the `userId` to restrict data access to the owner.\n\nTo support progress tracking and list management, the design introduces collections for managing anime and manga titles under each user's document. These collections are structured to support `list` operations effectively (QAPs), ensuring users only access their own data. Since login is requested, standard user authentication will be via email and password, as well as the support for anonymous access.\n\nThis design uses path-based ownership under `/users/{userId}`.  The `entityName` and `$ref` properties are derived from the data entities."
+  }
+}

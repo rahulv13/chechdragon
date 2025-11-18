@@ -1,0 +1,94 @@
+{
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "Action Shonen Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1574175031491-d262fbabdcfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhY3Rpb24lMjBhbmltZXxlbnwwfHx8fDE3NjE3OTA4Nzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "action anime"
+    },
+    {
+      "id": "2",
+      "description": "Slice of Life Manga",
+      "imageUrl": "https://images.unsplash.com/photo-1621998257812-20849f2491f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzbGljZSUyMGxpZmV8ZW58MHx8fHwxNzYxODQ4ODg4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "slice life"
+    },
+    {
+      "id": "3",
+      "description": "Fantasy Adventure Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1679395608214-f1de4a7dbf96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYW50YXN5JTIwYWR2ZW50dXJlfGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fantasy adventure"
+    },
+    {
+      "id": "4",
+      "description": "Sci-Fi Space Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1620002093367-25cbe3c17738?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzY2ktZmklMjBzcGFjZXxlbnwwfHx8fDE3NjE4MjQ1Njl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sci-fi space"
+    },
+    {
+      "id": "5",
+      "description": "Romance School Manga",
+      "imageUrl": "https://images.unsplash.com/photo-1698620625532-1a721990501f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cm9tYW5jZSUyMHNjaG9vbHxlbnwwfHx8fDE3NjE3NzI4MTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "romance school"
+    },
+    {
+      "id": "6",
+      "description": "Horror Mystery Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1630338679049-2ca5e3428f7d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxob3Jyb3IlMjBteXN0ZXJ5fGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "horror mystery"
+    },
+    {
+      "id": "7",
+      "description": "Sports Team Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1502904550040-7534597429ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzcG9ydHMlMjB0ZWFtfGVufDB8fHx8MTc2MTgwMzIxNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sports team"
+    },
+    {
+      "id": "8",
+      "description": "Historical Drama Manga",
+      "imageUrl": "https://images.unsplash.com/photo-1760292422027-a718a263b840?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxoaXN0b3JpY2FsJTIwZHJhbWF8ZW58MHx8fHwxNzYxODA1MjQ2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "historical drama"
+    },
+    {
+      "id": "9",
+      "description": "Comedy School Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1579566346927-160835c65532?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageHint": "comedy school"
+    },
+    {
+      "id": "10",
+      "description": "Isekai Fantasy Manga",
+      "imageUrl": "https://images.unsplash.com/photo-1713033766707-2fac55b1a6c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxpc2VrYWklMjBmYW50YXN5fGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "isekai fantasy"
+    },
+    {
+      "id": "11",
+      "description": "Mystery Detective Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1621112657062-d7a5c30b7286?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bXlzdGVyeSUyMGRldGVjdGl2ZXxlbnwwfHx8fDE3NjE4NDg4ODh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mystery detective"
+    },
+    {
+      "id": "12",
+      "description": "Psychological Seinen Manga",
+      "imageUrl": "https://images.unsplash.com/photo-1620302045185-fa47f83ba817?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzZWluZW4lMjBwc3ljaG9sb2dpY2FsfGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "seinen psychological"
+    },
+    {
+      "id": "13",
+      "description": "Mecha Action Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1678393529352-0f401d3a5a78?q=80&w=2960&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageHint": "mecha action"
+    },
+    {
+      "id": "14",
+      "description": "Magical Girl Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1596798622155-39ee3117b34b?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageHint": "magical girl"
+    },
+    {
+      "id": "15",
+      "description": "Cyberpunk Thriller Anime",
+      "imageUrl": "https://images.unsplash.com/photo-1550745165-9bc0b252726a?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageHint": "cyberpunk thriller"
+    }
+  ]
+}

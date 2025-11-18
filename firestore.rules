@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection
+    match /users/{userId} {
+      
+      // Allow user to read/write their own user document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Explicitly match the 'titles' subcollection
+      // This is necessary to grant list/read/write permissions to the subcollection documents.
+      match /titles/{titleId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
