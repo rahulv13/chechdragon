@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAuth } from 'firebase/auth';
+import { DraglistLogo } from '@/components/icons';
 
 const navItems = [
   {
@@ -92,7 +93,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center p-2">
+          <div className="flex items-center gap-2 p-2">
+            <DraglistLogo className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold">Draglist</span>
           </div>
         </SidebarHeader>
