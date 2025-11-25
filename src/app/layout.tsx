@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
 import AuthProvider from '@/components/auth-provider';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: 'Draglist',
@@ -32,6 +33,7 @@ export default function RootLayout({
           </AuthProvider>
         </FirebaseClientProvider>
         <Toaster />
+        <Analytics />
       </body>
     </html>
   );
