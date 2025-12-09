@@ -25,7 +25,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <meta name="google-site-verification" content="s_1ZQm6cT7lRSEMg9BY8UR1X8duenWqO6FBTUOXunWU" />
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
