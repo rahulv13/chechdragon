@@ -1,4 +1,3 @@
-
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -60,7 +59,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https' ,
         hostname: 'static.aniapi.com',
         port: '',
         pathname: '/**',
@@ -80,6 +79,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 's4.anilist.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'uploads.mangadex.org',
         port: '',
         pathname: '/**',
       }
