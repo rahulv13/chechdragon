@@ -3,6 +3,7 @@
 /**
  * @fileOverview An AI flow to extract anime/manga information from a URL.
  * It now uses the official MangaDex API for MangaDex URLs to improve reliability and avoid AI rate limits.
+ * It also uses a proxy for generic scraping to avoid being blocked on serverless platforms.
  *
  * - fetchTitleInfo - A function that takes a URL and returns structured data about a title.
  * - FetchTitleInfoInput - The input type for the fetchTitleInfo function.
@@ -134,14 +135,26 @@ export async function fetchTitleInfo(
   // --- Generic Scraper as Fallback ---
   try {
     console.log(`[fetchTitleInfo] Using generic AI scraper for ${input.url}`);
-    const response = await fetch(input.url, {
+    
+    // Use a proxy to avoid getting blocked by websites on serverless platforms like Vercel.
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(input.url)}`;
+
+    const response = await fetch(proxyUrl, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch URL: ${response.statusText}`);
+        // Try fetching without the proxy as a last resort
+        const directResponse = await fetch(input.url);
+        if (!directResponse.ok) {
+             throw new Error(`Failed to fetch URL directly and via proxy: ${response.statusText}`);
+        }
+       const htmlContent = await directResponse.text();
+       const { output } = await prompt({ url: input.url, htmlContent: htmlContent });
+        if (!output) throw new Error('AI model failed to return structured output from direct HTML content.');
+        return output;
     }
 
     const htmlContent = await response.text();
