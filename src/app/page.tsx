@@ -1,165 +1,125 @@
-'use client';
 
-import { useMemo } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import type { Title } from '@/lib/data';
-import {
-  Activity,
-  BookOpen,
-  Clapperboard,
-  Film,
-  List,
-  Target,
-  BookMarked
-} from 'lucide-react';
-import DashboardCharts from '@/components/dashboard-charts';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { DraglistLogo } from '@/components/icons';
+import { Clapperboard, BookOpen, Lock, Share2 } from 'lucide-react';
+import Image from 'next/image';
 
-export default function DashboardPage() {
-  const firestore = useFirestore();
-  const { user } = useUser();
-  
-  const titlesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return collection(firestore, 'users', user.uid, 'titles');
-  }, [firestore, user?.uid]);
-
-  const { data: allTitles, isLoading } = useCollection<Title>(titlesQuery);
-
-  const publicTitles = useMemo(() => {
-    if (isLoading || !allTitles) return [];
-    return allTitles?.filter(t => !t.isSecret) || [];
-  }, [allTitles, isLoading]);
-
-  const stats = useMemo(() => {
-    if (isLoading || !allTitles) {
-      return [
-        { label: 'Anime Watched', value: 0, change: '+0' },
-        { label: 'Manga Read', value: 0, change: '+0' },
-        { label: 'Manhwa Read', value: 0, change: '+0' },
-        { label: 'Episodes Watched', value: 0, change: '+0' },
-        { label: 'In Progress', value: 0, change: '+0' },
-        { label: 'Total Entries', value: 0, change: '+0' },
-        { label: 'Avg. Score', value: '0.00', change: '+0.0' },
-      ];
-    }
-    const animeWatched = publicTitles.filter(
-      (t) => t.type === 'Anime' && t.status === 'Completed'
-    ).length;
-    const mangaRead = publicTitles.filter(
-      (t) => t.type === 'Manga' && t.status === 'Completed'
-    ).length;
-     const manhwaRead = publicTitles.filter(
-      (t) => t.type === 'Manhwa' && t.status === 'Completed'
-    ).length;
-    const episodesWatched = publicTitles
-      .filter((t) => t.type === 'Anime')
-      .reduce((sum, t) => sum + t.progress, 0);
-    const inProgress = publicTitles.filter(
-      (t) => t.status === 'Watching' || t.status === 'Reading'
-    ).length;
-    const totalEntries = publicTitles.length;
-    const scoredTitles = publicTitles.filter((t) => t.score > 0);
-    const avgScore =
-      scoredTitles.length > 0
-        ? (
-            scoredTitles.reduce((sum, t) => sum + t.score, 0) /
-            scoredTitles.length
-          ).toFixed(2)
-        : '0.00';
-
-    return [
-      { label: 'Anime Watched', value: animeWatched, change: '+0' },
-      { label: 'Manga Read', value: mangaRead, change: '+0' },
-      { label: 'Manhwa Read', value: manhwaRead, change: '+0' },
-      { label: 'Episodes Watched', value: episodesWatched, change: '+0' },
-      { label: 'In Progress', value: inProgress, change: '+0' },
-      { label: 'Total Entries', value: totalEntries, change: '+0' },
-      { label: 'Avg. Score', value: avgScore, change: '+0.0' },
-    ];
-  }, [allTitles, publicTitles, isLoading]);
-
-  const recentActivity = useMemo(() => {
-    if (isLoading || !publicTitles) {
-       return Array.from({ length: 6 }, (_, i) => {
-          const d = new Date();
-          d.setMonth(d.getMonth() - i);
-          return {
-            name: d.toLocaleString('default', { month: 'short' }),
-            anime: 0,
-            manga: 0,
-            manhwa: 0,
-          };
-        }).reverse();
-    }
-
-    const months = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      return {
-        name: d.toLocaleString('default', { month: 'short' }),
-        year: d.getFullYear(),
-        month: d.getMonth(),
-        anime: 0,
-        manga: 0,
-        manhwa: 0,
-      };
-    }).reverse();
-
-    if (publicTitles) {
-      for (const title of publicTitles) {
-        if (title.updatedAt?.toDate) {
-          const updatedDate = title.updatedAt.toDate();
-          const monthIndex = months.findIndex(
-            (m) =>
-              m.year === updatedDate.getFullYear() &&
-              m.month === updatedDate.getMonth()
-          );
-          if (monthIndex !== -1) {
-            if (title.type === 'Anime') {
-              months[monthIndex].anime += 1;
-            } else if (title.type === 'Manga') {
-              months[monthIndex].manga += 1;
-            } else if (title.type === 'Manhwa') {
-                months[monthIndex].manhwa += 1;
-            }
-          }
-        }
-      }
-    }
-    return months.map(({ name, anime, manga, manhwa }) => ({ name, anime, manga, manhwa }));
-  }, [publicTitles, isLoading]);
-  
-  const statusDistribution = useMemo(() => {
-    if (isLoading || !publicTitles) return [];
-    const watching = publicTitles.filter((t) => t.status === 'Watching').length;
-    const reading = publicTitles.filter((t) => t.status === 'Reading').length;
-    const planned = publicTitles.filter((t) => t.status === 'Planned').length;
-    const completed = publicTitles.filter((t) => t.status === 'Completed').length;
-    return [
-      { name: 'Watching', value: watching, fill: 'var(--color-watching)' },
-      { name: 'Reading', value: reading, fill: 'var(--color-reading)' },
-      { name: 'Planned', value: planned, fill: 'var(--color-planned)' },
-      { name: 'Completed', value: completed, fill: 'var(--color-completed)' },
-    ];
-  }, [publicTitles, isLoading]);
-
-
-  const iconMap: { [key: string]: React.ReactNode } = {
-    'Anime Watched': <Film className="h-6 w-6 text-muted-foreground" />,
-    'Manga Read': <BookOpen className="h-6 w-6 text-muted-foreground" />,
-    'Manhwa Read': <BookMarked className="h-6 w-6 text-muted-foreground" />,
-    'Episodes Watched': <Clapperboard className="h-6 w-6 text-muted-foreground" />,
-    'In Progress': <Activity className="h-6 w-6 text-muted-foreground" />,
-    'Total Entries': <List className="h-6 w-6 text-muted-foreground" />,
-    'Avg. Score': <Target className="h-6 w-6 text-muted-foreground" />,
-  };
-
-
+export default function LandingPage() {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <header className="px-4 lg:px-6 h-16 flex items-center bg-background/95 backdrop-blur-sm">
+        <Link href="#" className="flex items-center justify-center" prefetch={false}>
+          <DraglistLogo className="h-8 w-8 text-primary" />
+          <span className="ml-2 text-xl font-bold">Draglist</span>
+        </Link>
+        <nav className="ml-auto flex gap-4 sm:gap-6">
+          <Link
+            href="/login"
+            className="text-sm font-medium hover:underline underline-offset-4"
+            prefetch={false}
+          >
+            Login
+          </Link>
+          <Button asChild>
+            <Link href="/register" prefetch={false}>
+              Get Started
+            </Link>
+          </Button>
+        </nav>
+      </header>
+      <main className="flex-1">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
+          <div className="container px-4 md:px-6">
+            <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
+              <div className="flex flex-col justify-center space-y-4">
+                <div className="space-y-2">
+                  <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
+                    The Ultimate Anime & Manga Tracker
+                  </h1>
+                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
+                    Drag, drop, and track your progress. Effortlessly manage your lists, discover new titles, and keep your secret stash private.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                  <Button asChild size="lg">
+                    <Link href="/register" prefetch={false}>
+                      Sign Up for Free
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <Link href="/login" prefetch={false}>
+                      Login to Your Account
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+              <Image
+                src="https://images.unsplash.com/photo-1578632767115-351597cf247c?q=80&w=2787&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                width="600"
+                height="600"
+                alt="Hero"
+                className="mx-auto aspect-square overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
+                data-ai-hint="anime manga collage"
+              />
+            </div>
+          </div>
+        </section>
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">Key Features</div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need, Nothing You Don't</h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Draglist is built for fans who want a beautiful, simple, and powerful way to keep track of their watching and reading habits.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3 lg:max-w-none mt-12">
+              <Card>
+                <CardContent className="flex flex-col items-center text-center p-6">
+                  <Clapperboard className="w-12 h-12 mb-4 text-primary" />
+                  <h3 className="text-xl font-bold">Anime & Manga Lists</h3>
+                  <p className="text-muted-foreground mt-2">
+                    Keep separate, organized lists for everything you're watching and reading.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex flex-col items-center text-center p-6">
+                  <BookOpen className="w-12 h-12 mb-4 text-primary" />
+                  <h3 className="text-xl font-bold">Progress Tracking</h3>
+                  <p className="text-muted-foreground mt-2">
+                    Update your episode or chapter count with a single click. Never lose your place again.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex flex-col items-center text-center p-6">
+                  <Lock className="w-12 h-12 mb-4 text-primary" />
+                  <h3 className="text-xl font-bold">Secret Stash</h3>
+                  <p className="text-muted-foreground mt-2">
+                    A password-protected section for titles you want to keep private. Your secrets are safe.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+        <p className="text-xs text-muted-foreground">&copy; 2024 Draglist. All rights reserved.</p>
+        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+          <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
+            Terms of Service
+          </Link>
+          <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
+            Privacy
+          </Link>
+        </nav>
+      </footer>
+    </div>
+  );
+}
