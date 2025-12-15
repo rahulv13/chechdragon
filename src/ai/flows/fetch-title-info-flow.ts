@@ -179,3 +179,4 @@ export async function fetchTitleInfo(
     throw new Error(`The AI failed to extract information from the URL. Please check if the URL is correct and public. Reason: ${error.message}`);
   }
 }
+
