@@ -194,9 +194,9 @@ export default function SearchPage() {
         form.setValue('total', info.total > 0 ? info.total : 0);
         form.setValue('type', info.type);
         toast({ title: 'Success', description: 'Information fetched successfully!' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to fetch title info:', error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch information from the URL.' });
+        toast({ variant: 'destructive', title: 'Fetch Error', description: error.message || 'Could not fetch information from the URL.' });
     } finally {
         setIsFetching(false);
     }
@@ -446,3 +446,4 @@ export default function SearchPage() {
     </div>
   );
 }
+
