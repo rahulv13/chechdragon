@@ -1,10 +1,18 @@
 
 'use server';
+/**
+ * @fileOverview An AI flow to extract anime/manga information from a URL.
+ * It now uses the official MangaDex API for MangaDex URLs to improve reliability.
+ * Generic scraping has been removed to ensure stability on Vercel.
+ *
+ * - fetchTitleInfo - A function that takes a URL and returns structured data about a title.
+ * - FetchTitleInfoInput - The input type for the fetchTitleInfo function.
+ * - FetchTitleInfoOutput - The return type for the fetchTitleinfo function.
+ */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-// Input and Output Schemas for the overall flow
 const FetchTitleInfoInputSchema = z.object({
   url: z.string().url(),
 });
@@ -18,34 +26,6 @@ const FetchTitleInfoOutputSchema = z.object({
 });
 export type FetchTitleInfoOutput = z.infer<typeof FetchTitleInfoOutputSchema>;
 
-// Internal schema for the AI scraper prompt
-const ScraperPromptInputSchema = z.object({
-  url: z.string().url(),
-  htmlContent: z.string(),
-});
-
-// The AI prompt for scraping generic URLs
-const scraperPrompt = ai.definePrompt({
-  name: 'fetchTitleInfoPrompt',
-  input: { schema: ScraperPromptInputSchema },
-  output: { schema: FetchTitleInfoOutputSchema },
-  prompt: `You are an expert web scraper. Your task is to analyze the provided HTML content and extract the requested information in the specified JSON format. The URL is provided for context.
-
-URL: {{{url}}}
-
-HTML Content:
-\`\`\`html
-{{{htmlContent}}}
-\`\`\`
-
-You must extract the following details:
-1.  **title**: The official title of the series. Find this in the main heading (like <h1>) or the page <title> tag.
-2.  **imageUrl**: The direct, absolute URL for the main cover image or poster. Look for the most prominent image, often inside a component that looks like a card or poster. A meta tag like <meta property="og:image" ...> is a good fallback. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
-3.  **total**: The total number of episodes (for Anime) or chapters (for Manga/Manhwa). If it's a movie, return 1. If you cannot find a count, default to 1.
-4.  **type**: Determine if it is 'Anime', 'Manga', or 'Manhwa'. If the content mentions "episodes" or "anime", it is 'Anime'. If it mentions "manhwa" or "webtoon", it is 'Manhwa'. Otherwise, if it has "chapters", assume it is 'Manga'.`,
-});
-
-// The main flow, wrapped with defineFlow for robust execution
 const fetchTitleInfoFlow = ai.defineFlow(
   {
     name: 'fetchTitleInfoFlow',
@@ -93,34 +73,13 @@ const fetchTitleInfoFlow = ai.defineFlow(
           type: 'Manga',
         };
       } catch (error: any) {
-        console.error('MangaDex API path failed:', error.message);
-        // If the API path fails for any reason, we can still fall back to the generic scraper
+        console.error(`[MangaDex API Error] Failed to process ${url}:`, error.message);
+        throw new Error(`Could not process MangaDex URL. Reason: ${error.message}`);
       }
     }
 
-    // --- Generic Scraper Fallback Path ---
-    console.log(`[fetchTitleInfoFlow] Using generic scraper for ${url}`);
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    
-    const response = await fetch(proxyUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
-        cache: 'no-store'
-    });
-    
-    const htmlContent = await response.text();
-
-    if (!response.ok || htmlContent.length < 500) {
-      console.error('Scraping failed. Response not OK or HTML content too small.', { status: response.status, contentLength: htmlContent.length });
-      throw new Error('Scraped content was invalid or the request was blocked.');
-    }
-
-    const { output } = await scraperPrompt({ url, htmlContent });
-
-    if (!output) {
-      throw new Error('AI model failed to extract structured data from the provided URL.');
-    }
-
-    return output;
+    // --- If not MangaDex, throw an error ---
+    throw new Error('URL fetching is currently only supported for MangaDex. Please add other titles manually.');
   }
 );
 
@@ -128,10 +87,11 @@ const fetchTitleInfoFlow = ai.defineFlow(
 export async function fetchTitleInfo(input: FetchTitleInfoInput): Promise<FetchTitleInfoOutput> {
   try {
     return await fetchTitleInfoFlow(input);
-  } catch (error: any) {
+  } catch (error: any)
+{
     console.error(`[fetchTitleInfo Server Action] Error executing flow for URL ${input.url}:`, error);
     // Re-throw a user-friendly error to the client.
-    throw new Error(`The AI failed to extract information. The URL may be private, incorrect, or the website might be blocking our service. Reason: ${error.message}`);
+    throw new Error(error.message || 'An unexpected error occurred while fetching title info.');
   }
 }
 
