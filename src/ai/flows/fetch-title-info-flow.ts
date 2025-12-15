@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -133,4 +134,3 @@ export async function fetchTitleInfo(input: FetchTitleInfoInput): Promise<FetchT
     throw new Error(`The AI failed to extract information. The URL may be private, incorrect, or the website might be blocking our service. Reason: ${error.message}`);
   }
 }
-
