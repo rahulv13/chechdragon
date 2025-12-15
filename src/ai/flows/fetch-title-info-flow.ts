@@ -1,47 +1,30 @@
-
 'use server';
-/**
- * @fileOverview An AI flow to extract anime/manga information from a URL.
- * It now uses the official MangaDex API for MangaDex URLs to improve reliability and avoid AI rate limits.
- * It also uses a proxy for generic scraping to avoid being blocked on serverless platforms.
- *
- * - fetchTitleInfo - A function that takes a URL and returns structured data about a title.
- * - FetchTitleInfoInput - The input type for the fetchTitleInfo function.
- * - FetchTitleInfoOutput - The return type for the fetchTitleinfo function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
+// Input and Output Schemas for the overall flow
 const FetchTitleInfoInputSchema = z.object({
-  url: z.string().url().describe('The URL of the anime or manga page.'),
+  url: z.string().url(),
 });
 export type FetchTitleInfoInput = z.infer<typeof FetchTitleInfoInputSchema>;
 
 const FetchTitleInfoOutputSchema = z.object({
-  title: z.string().describe('The official title of the anime or manga.'),
-  imageUrl: z
-    .string()
-    .url()
-    .describe(
-      'The direct, absolute URL for the cover image. Must be a URL to an image file (e.g., .jpg, .png, .webp), not a URL to a web page.'
-    ),
-  total: z
-    .number()
-    .describe(
-      'The total number of episodes or chapters available on the page.'
-    ),
-  type: z.enum(['Anime', 'Manga', 'Manhwa']).describe("The media type, one of 'Anime', 'Manga', or 'Manhwa'."),
+  title: z.string(),
+  imageUrl: z.string().url(),
+  total: z.number(),
+  type: z.enum(['Anime', 'Manga', 'Manhwa']),
 });
 export type FetchTitleInfoOutput = z.infer<typeof FetchTitleInfoOutputSchema>;
 
-
+// Internal schema for the AI scraper prompt
 const ScraperPromptInputSchema = z.object({
-    url: z.string().url(),
-    htmlContent: z.string(),
+  url: z.string().url(),
+  htmlContent: z.string(),
 });
 
-const prompt = ai.definePrompt({
+// The AI prompt for scraping generic URLs
+const scraperPrompt = ai.definePrompt({
   name: 'fetchTitleInfoPrompt',
   input: { schema: ScraperPromptInputSchema },
   output: { schema: FetchTitleInfoOutputSchema },
@@ -57,126 +40,97 @@ HTML Content:
 You must extract the following details:
 1.  **title**: The official title of the series. Find this in the main heading (like <h1>) or the page <title> tag.
 2.  **imageUrl**: The direct, absolute URL for the main cover image or poster. Look for the most prominent image, often inside a component that looks like a card or poster. A meta tag like <meta property="og:image" ...> is a good fallback. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
-3.  **total**: The total number of episodes (for Anime) or chapters (for Manga/Manhwa).
-    -   If it is a movie with only one part, return 1.
-    -   If you absolutely cannot find an episode or chapter list in the HTML, default to 1.
-4.  **type**: Determine if it is 'Anime', 'Manga', or 'Manhwa'.
-    - If the content mentions "episodes" or "anime", it is 'Anime'.
-    - If the content or URL mentions "manhwa" or "webtoon", or if the site is a known manhwa-focused site (like asurascans, omegascans), it is 'Manhwa'.
-    - Otherwise, if it has "chapters", assume it is 'Manga'.`,
+3.  **total**: The total number of episodes (for Anime) or chapters (for Manga/Manhwa). If it's a movie, return 1. If you cannot find a count, default to 1.
+4.  **type**: Determine if it is 'Anime', 'Manga', or 'Manhwa'. If the content mentions "episodes" or "anime", it is 'Anime'. If it mentions "manhwa" or "webtoon", it is 'Manhwa'. Otherwise, if it has "chapters", assume it is 'Manga'.`,
 });
 
+// The main flow, wrapped with defineFlow for robust execution
+const fetchTitleInfoFlow = ai.defineFlow(
+  {
+    name: 'fetchTitleInfoFlow',
+    inputSchema: FetchTitleInfoInputSchema,
+    outputSchema: FetchTitleInfoOutputSchema,
+  },
+  async ({ url }) => {
+    const parsedUrl = new URL(url);
 
-export async function fetchTitleInfo(
-  input: FetchTitleInfoInput
-): Promise<FetchTitleInfoOutput> {
-  const url = new URL(input.url);
+    // --- Fast Path for MangaDex using their API ---
+    if (parsedUrl.hostname === 'mangadex.org') {
+      try {
+        const match = url.match(/title\/([a-f0-9-]+)/);
+        if (!match) throw new Error('Invalid MangaDex URL');
+        const mangaId = match[1];
 
-  // --- Hybrid Approach: Use MangaDex API if applicable ---
-  if (url.hostname === 'mangadex.org') {
-    try {
-      console.log(`[fetchTitleInfo] MangaDex URL detected. Using API.`);
-      const match = input.url.match(/title\/([a-f0-9\-]+)/);
-      const mangaId = match?.[1];
-      if (!mangaId) throw new Error('Invalid MangaDex URL, could not extract ID.');
+        // Fetch manga details
+        const mangaRes = await fetch(`https://api.mangadex.org/manga/${mangaId}`);
+        if (!mangaRes.ok) throw new Error('MangaDex manga fetch failed');
+        const mangaData = await mangaRes.json();
+        
+        const title = mangaData.data?.attributes?.title?.en ?? Object.values(mangaData.data?.attributes?.title ?? {})[0] ?? 'Unknown';
 
-      // --- Fetch Manga Info ---
-      const mangaRes = await fetch(`https://api.mangadex.org/manga/${mangaId}`, {
-        headers: { 'User-Agent': 'DraglistApp/1.0 (https://draglist.app)' },
-      });
-
-      const mangaText = await mangaRes.text();
-      if (!mangaText.startsWith('{')) {
-        console.error('[MangaDex API Error] Non-JSON response:', mangaText.slice(0, 200));
-        throw new Error('MangaDex API returned a non-JSON response (rate-limited or invalid request).');
-      }
-      const mangaData = JSON.parse(mangaText);
-
-      const title =
-        mangaData.data?.attributes?.title?.en ||
-        Object.values(mangaData.data?.attributes?.title || {})[0] ||
-        'Unknown Title';
-
-      // --- Fetch cover filename properly ---
-      const coverRel = mangaData.data?.relationships?.find(
-        (r: any) => r.type === 'cover_art'
-      );
-      let imageUrl = 'https://picsum.photos/seed/placeholder/400/600'; // Valid placeholder
-
-      if (coverRel?.id) {
-        const coverRes = await fetch(`https://api.mangadex.org/cover/${coverRel.id}`);
-        const coverData = await coverRes.json();
-        const coverFileName = coverData.data?.attributes?.fileName;
-        if (coverFileName) {
-          imageUrl = `https://uploads.mangadex.org/covers/${mangaId}/${coverFileName}`;
+        // Fetch cover art
+        const coverRel = mangaData.data?.relationships?.find((r: any) => r.type === 'cover_art');
+        let imageUrl = 'https://picsum.photos/seed/mangadex-fallback/400/600'; // Fallback
+        if (coverRel?.id) {
+          const coverRes = await fetch(`https://api.mangadex.org/cover/${coverRel.id}`);
+          const coverData = await coverRes.json();
+          const coverFileName = coverData.data?.attributes?.fileName;
+          if (coverFileName) {
+            imageUrl = `https://uploads.mangadex.org/covers/${mangaId}/${coverFileName}`;
+          }
         }
+
+        // Fetch chapter count
+        const chaptersRes = await fetch(`https://api.mangadex.org/chapter?manga=${mangaId}&limit=1`);
+        if (!chaptersRes.ok) throw new Error('MangaDex chapters fetch failed');
+        const chaptersData = await chaptersRes.json();
+
+        return {
+          title,
+          imageUrl,
+          total: chaptersData.total ?? 1,
+          type: 'Manga',
+        };
+      } catch (error: any) {
+        console.error('MangaDex API path failed:', error.message);
+        // If the API path fails for any reason, we can still fall back to the generic scraper
       }
-
-      // --- Fetch Chapters ---
-      const chaptersRes = await fetch(
-        `https://api.mangadex.org/chapter?manga=${mangaId}&limit=500&translatedLanguage[]=en`,
-        { headers: { 'User-Agent': 'DraglistApp/1.0' } }
-      );
-      const chaptersText = await chaptersRes.text();
-      const chaptersData = chaptersText.startsWith('{')
-        ? JSON.parse(chaptersText)
-        : { total: 1 };
-      
-      const total = chaptersData.total ?? 1;
-
-      return { title, imageUrl, total, type: 'Manga' };
-
-    } catch (error: any) {
-      console.error(`[fetchTitleInfo] MangaDex API Error:`, error);
-      // Fallback to generic scraper if API fails for some reason
     }
-  }
-  
-  // --- Generic Scraper as Fallback ---
-  try {
-    console.log(`[fetchTitleInfo] Using generic AI scraper for ${input.url}`);
+
+    // --- Generic Scraper Fallback Path ---
+    console.log(`[fetchTitleInfoFlow] Using generic scraper for ${url}`);
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
     
-    // Use a proxy to avoid getting blocked by websites on serverless platforms like Vercel.
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(input.url)}`;
-
     const response = await fetch(proxyUrl, {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
+        cache: 'no-store'
     });
-
-    if (!response.ok) {
-        // Try fetching without the proxy as a last resort
-        const directResponse = await fetch(input.url);
-        if (!directResponse.ok) {
-             throw new Error(`Failed to fetch URL directly and via proxy: ${response.statusText}`);
-        }
-       const htmlContent = await directResponse.text();
-       const { output } = await prompt({ url: input.url, htmlContent: htmlContent });
-        if (!output) throw new Error('AI model failed to return structured output from direct HTML content.');
-        return output;
-    }
-
+    
     const htmlContent = await response.text();
 
-    const { output } = await prompt({
-        url: input.url,
-        htmlContent: htmlContent,
-    });
+    if (!response.ok || htmlContent.length < 500) {
+      console.error('Scraping failed. Response not OK or HTML content too small.', { status: response.status, contentLength: htmlContent.length });
+      throw new Error('Scraped content was invalid or the request was blocked.');
+    }
+
+    const { output } = await scraperPrompt({ url, htmlContent });
 
     if (!output) {
-      throw new Error('AI model failed to return structured output from the HTML content.');
-    }
-    
-    // Ensure imageUrl is an absolute URL
-    if (output.imageUrl && !output.imageUrl.startsWith('http')) {
-      output.imageUrl = new URL(output.imageUrl, `${url.protocol}//${url.hostname}`).href;
+      throw new Error('AI model failed to extract structured data from the provided URL.');
     }
 
     return output;
+  }
+);
+
+// This is the exported server action that the client will call.
+export async function fetchTitleInfo(input: FetchTitleInfoInput): Promise<FetchTitleInfoOutput> {
+  try {
+    return await fetchTitleInfoFlow(input);
   } catch (error: any) {
-    console.error(`[fetchTitleInfo] Generic Scraper Error for URL ${input.url}:`, error);
-    throw new Error(`The AI failed to extract information from the URL. Please check if the URL is correct and public. Reason: ${error.message}`);
+    console.error(`[fetchTitleInfo Server Action] Error executing flow for URL ${input.url}:`, error);
+    // Re-throw a user-friendly error to the client.
+    throw new Error(`The AI failed to extract information. The URL may be private, incorrect, or the website might be blocking our service. Reason: ${error.message}`);
   }
 }
 
