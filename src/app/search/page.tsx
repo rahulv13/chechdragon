@@ -259,14 +259,14 @@ export default function SearchPage() {
             <DialogHeader>
               <DialogTitle>Add a new title</DialogTitle>
               <DialogDescription>
-                Enter a URL to auto-fill details, or add them manually.
+                Enter a MangaDex URL to auto-fill, or add details manually.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="fetch-url">Fetch from URL</Label>
                     <div className="flex items-center gap-2">
-                        <Input id="fetch-url" placeholder="https://myanimelist.net/..." value={urlToFetch} onChange={(e) => setUrlToFetch(e.target.value)} disabled={isFetching}/>
+                        <Input id="fetch-url" placeholder="https://mangadex.org/title/..." value={urlToFetch} onChange={(e) => setUrlToFetch(e.target.value)} disabled={isFetching}/>
                         <Button onClick={handleFetchInfo} disabled={isFetching} size="icon">
                             {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
                             <span className="sr-only">Fetch Info</span>
