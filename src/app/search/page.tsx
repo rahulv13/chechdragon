@@ -263,7 +263,7 @@ export default function SearchPage() {
             <DialogHeader>
               <DialogTitle>Add a new title</DialogTitle>
               <DialogDescription>
-                Enter a URL to auto-fill details (MangaDex supported), or add them manually.
+                Enter a MangaDex or AniList URL to auto-fill details, or add them manually.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
