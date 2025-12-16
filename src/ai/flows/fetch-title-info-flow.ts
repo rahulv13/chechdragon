@@ -1,7 +1,8 @@
+
 'use server';
 
-import { z } from 'genkit';
 import { getAI } from '@/ai/genkit'; // Use the lazy initializer
+import { z } from 'genkit';
 
 // Define schema types, but do not export them from this server module.
 type FetchTitleInfoInput = z.infer<typeof FetchTitleInfoInputSchema>;
@@ -127,4 +128,3 @@ export async function fetchTitleInfo(
     throw new Error(error.message || 'An unexpected error occurred while fetching title information.');
   }
 }
-
