@@ -1,6 +1,10 @@
 
 'use client';
 
+// Enforce Node.js runtime and increase timeout for this route on Vercel
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useFirestore, useUser } from '@/firebase';
 import Image from 'next/image';
@@ -190,7 +194,7 @@ export default function SearchPage() {
     try {
         const info = await fetchTitleInfo({ url: urlToFetch });
         form.setValue('title', info.title);
-        form.setValue('imageUrl', info.imageUrl);
+        form.setValue('imageUrl', info.imageUrl || '');
         form.setValue('total', info.total > 0 ? info.total : 0);
         form.setValue('type', info.type);
         toast({ title: 'Success', description: 'Information fetched successfully!' });
@@ -259,14 +263,14 @@ export default function SearchPage() {
             <DialogHeader>
               <DialogTitle>Add a new title</DialogTitle>
               <DialogDescription>
-                Enter a MangaDex URL to auto-fill, or add details manually.
+                Enter a URL to auto-fill details (MangaDex supported), or add them manually.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="fetch-url">Fetch from URL</Label>
                     <div className="flex items-center gap-2">
-                        <Input id="fetch-url" placeholder="https://mangadex.org/title/..." value={urlToFetch} onChange={(e) => setUrlToFetch(e.target.value)} disabled={isFetching}/>
+                        <Input id="fetch-url" placeholder="https://mangadex.org/..." value={urlToFetch} onChange={(e) => setUrlToFetch(e.target.value)} disabled={isFetching}/>
                         <Button onClick={handleFetchInfo} disabled={isFetching} size="icon">
                             {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
                             <span className="sr-only">Fetch Info</span>
