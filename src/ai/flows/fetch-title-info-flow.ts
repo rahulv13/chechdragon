@@ -38,14 +38,14 @@ export async function fetchTitleInfo(
 
     const fetchTitleInfoFlow = ai.defineFlow(
       {
-        name: 'fetchTitleInfoFlow_v4', // Use a unique name
+        name: 'fetchTitleInfoFlow_v5', // Use a unique name
         inputSchema: FetchTitleInfoInputSchema,
         outputSchema: FetchTitleInfoOutputSchema,
       },
       async ({ url }) => {
         const parsedUrl = new URL(url);
 
-        // 1. MangaDex API Fast Path (Most Reliable)
+        // 1. MangaDex API Fast Path
         if (parsedUrl.hostname === 'mangadex.org') {
           console.log(`[Flow] MangaDex URL detected. Using API.`);
           const match = url.match(/title\/([a-f0-9-]+)/);
