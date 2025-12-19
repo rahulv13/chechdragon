@@ -79,6 +79,11 @@
         "isSecret": {
           "type": "boolean",
           "description": "Whether the title is hidden in the secret section."
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The original URL from which the title information was fetched (e.g., MangaDex, AniList)."
         }
       },
       "required": ["title", "type", "status", "progress", "total", "imageUrl"]
