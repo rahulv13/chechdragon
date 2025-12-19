@@ -1,6 +1,7 @@
+
 'use server';
-// This file is used for development to hot-reload Genkit flows.
-// The main registration is now done in `genkit.ts` for production builds.
+// Flows will be imported for their side effects in this file.
 import './flows/fetch-title-info-flow';
 import './flows/fetch-top-titles-flow';
 import './flows/search-titles-flow';
+import './flows/refresh-title-info-flow';
