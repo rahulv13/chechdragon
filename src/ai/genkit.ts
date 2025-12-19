@@ -34,3 +34,4 @@ export const ai = getAI();
 import './flows/fetch-title-info-flow';
 import './flows/fetch-top-titles-flow';
 import './flows/search-titles-flow';
+import './flows/refresh-title-info-flow';
