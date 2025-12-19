@@ -17,6 +17,7 @@ import {
   setDocumentNonBlocking,
 } from '@/firebase';
 import { PlaceHolderImages } from './placeholder-images';
+import { refreshTitleInfo } from '@/ai/flows/refresh-title-info-flow';
 
 export type Title = {
   id: string;
@@ -29,6 +30,7 @@ export type Title = {
   imageUrl: string;
   imageHint: string;
   isSecret: boolean;
+  sourceUrl?: string; // Optional: The original URL from where info was fetched
   createdAt: any; // serverTimestamp
   updatedAt: any; // serverTimestamp
 };
@@ -45,7 +47,7 @@ export const addTitle = (
   
   const randomPlaceholder = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
 
-  const data = {
+  const data: Omit<Title, 'id'> = {
     ...newTitleData,
     progress: 0,
     score: 0,
@@ -53,6 +55,7 @@ export const addTitle = (
     imageUrl:
       newTitleData.imageUrl || randomPlaceholder.imageUrl,
     imageHint: newTitleData.imageUrl ? newTitleData.title.split(' ').slice(0, 2).join(' ').toLowerCase() : randomPlaceholder.imageHint,
+    sourceUrl: newTitleData.sourceUrl || '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -74,6 +77,15 @@ export const updateTitle = (
     ...updatedData,
     updatedAt: serverTimestamp(),
   });
+
+  // After updating progress, kick off a background refresh
+  if (updatedData.progress !== undefined) {
+    console.log(`[updateTitle] Kicking off background refresh for title: ${titleId}`)
+    refreshTitleInfo({ userId, titleId }).catch(err => {
+      // We don't want to bother the user with a toast for a background task
+      console.error(`[updateTitle] Background refresh failed for title ${titleId}:`, err);
+    })
+  }
 };
 
 export const deleteTitle = (
