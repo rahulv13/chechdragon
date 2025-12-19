@@ -68,6 +68,7 @@ type FormValues = {
   total: number;
   score: number;
   isSecret: boolean;
+  sourceUrl?: string;
 };
 
 export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
@@ -85,6 +86,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
       total: item.total,
       score: item.score,
       isSecret: item.isSecret,
+      sourceUrl: item.sourceUrl || '',
     },
   });
 
@@ -240,6 +242,19 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
                             <Input {...field} />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sourceUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://mangadex.org/..." {...field} />
+                          </FormControl>
+                           <FormMessage />
                         </FormItem>
                       )}
                     />
