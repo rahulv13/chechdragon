@@ -63,6 +63,7 @@ type FormValues = {
   total: number;
   imageUrl: string;
   isSecret: boolean;
+  sourceUrl?: string;
 };
 
 export default function SearchPage() {
@@ -145,6 +146,7 @@ export default function SearchPage() {
       total: 0,
       imageUrl: '',
       isSecret: false,
+      sourceUrl: '',
     },
   });
 
@@ -155,7 +157,7 @@ export default function SearchPage() {
     }
     addTitle(firestore, user.uid, {
         ...data,
-        total: Number(data.total) || 0
+        total: Number(data.total) || 0,
     });
     toast({
         title: "Title Added",
@@ -197,6 +199,7 @@ export default function SearchPage() {
         form.setValue('imageUrl', info.imageUrl || '');
         form.setValue('total', info.total > 0 ? info.total : 0);
         form.setValue('type', info.type);
+        form.setValue('sourceUrl', urlToFetch); // Save the source URL
         toast({ title: 'Success', description: 'Information fetched successfully!' });
     } catch (error: any) {
         console.error('Failed to fetch title info:', error);
