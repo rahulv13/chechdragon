@@ -117,8 +117,52 @@ const fetchTitleInfoFlow = ai.defineFlow(
       };
     }
 
-    // 3. If no specific API path matches, throw an error.
-    throw new Error('Unsupported URL. Only MangaDex and AniList links are currently supported for auto-fetching.');
+    // 3. Anikai.to Scraper
+    if (parsedUrl.hostname.includes('anikai.to')) {
+        console.log(`[Flow] Anikai URL detected.`);
+
+        // Fetch the page with a User-Agent to mimic a browser
+        const res = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            }
+        });
+
+        if (!res.ok) throw new Error(`Anikai fetch failed with status: ${res.status}`);
+        const html = await res.text();
+
+        // Regex Extraction
+        const titleMatch = html.match(/<h1[^>]*itemprop="name"[^>]*>([^<]+)<\/h1>/i) || html.match(/<meta property="og:title" content="([^"]+)"/i);
+        const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/i);
+        // Episode count: look for the 'sub' count in the info section
+        const subMatch = html.match(/<span class="sub"[^>]*>.*?(\d+)<\/span>/s);
+        // Type: look for the type badge (TV, MOVIE, etc)
+        const typeMatch = html.match(/<span><b>(TV|MOVIE|ONA|OVA|SPECIAL)<\/b><\/span>/i);
+
+        const title = titleMatch ? titleMatch[1].replace('Watch ', '').replace(' Online in HD - AnimeKAI', '').trim() : 'Unknown Title';
+        const imageUrl = imageMatch ? imageMatch[1] : '';
+        let total = subMatch ? parseInt(subMatch[1], 10) : 0;
+
+        // Adjust total if it's 1 (often movies/specials are listed as 1)
+        if (total === 0 && typeMatch) {
+            total = 1;
+        }
+
+        // Map Anikai types to our types
+        let type: 'Anime' | 'Manga' | 'Manhwa' = 'Anime';
+        // Anikai is primarily anime, so we default to Anime.
+        // If we ever scrape a site that mixes them, we'd need better logic.
+
+        return {
+            title,
+            imageUrl,
+            total,
+            type
+        };
+    }
+
+    // 4. If no specific API path matches, throw an error.
+    throw new Error('Unsupported URL. Only MangaDex, AniList, and Anikai links are currently supported for auto-fetching.');
   }
 );
 
