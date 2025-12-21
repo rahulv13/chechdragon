@@ -133,7 +133,15 @@ const fetchTitleInfoFlow = ai.defineFlow(
 
         // Regex Extraction
         const titleMatch = html.match(/<h1[^>]*itemprop="name"[^>]*>([^<]+)<\/h1>/i) || html.match(/<meta property="og:title" content="([^"]+)"/i);
-        const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/i);
+
+        // Priority 1: itemprop="image"
+        // Priority 2: .poster img
+        // Priority 3: og:image
+        const imageMatch =
+          html.match(/<img[^>]*itemprop="image"[^>]*src="([^"]+)"/i) ||
+          html.match(/<div[^>]*class="poster"[^>]*>\s*<img[^>]*src="([^"]+)"/i) ||
+          html.match(/<meta property="og:image" content="([^"]+)"/i);
+
         // Episode count: look for the 'sub' count in the info section
         const subMatch = html.match(/<span class="sub"[^>]*>.*?(\d+)<\/span>/s);
         // Type: look for the type badge (TV, MOVIE, etc)
