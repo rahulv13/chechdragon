@@ -213,7 +213,7 @@ export default function SearchPage() {
     return (
       <div className="space-y-4">
         <h3 className="text-2xl font-bold tracking-tight">{title}</h3>
-        <Carousel opts={{ align: "start", loop: !isLoadingTop && items && items.length > 0 }} className="relative">
+        <Carousel opts={{ align: "start", loop: !isLoadingTop && !!items && items.length > 0 }} className="relative">
           <CarouselContent>
             {isLoadingTop || !items ? (
               Array.from({ length: 5 }).map((_, index) => (
@@ -326,7 +326,7 @@ export default function SearchPage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Type</FormLabel>
-                                <Select onValuechange={field.onChange} defaultValue={field.value} value={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a type" />
@@ -363,7 +363,7 @@ export default function SearchPage() {
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>Status</FormLabel>
-                            <Select onValuechange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select a status" />
