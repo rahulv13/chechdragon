@@ -9,7 +9,7 @@ function createGenkitInstance() {
   console.log('[Genkit] Initializing Genkit instance...');
   return genkit({
     plugins: [googleAI()],
-    model: 'googleai/gemini-2.5-flash',
+    model: 'googleai/gemini-1.5-flash',
   });
 }
 
@@ -31,7 +31,14 @@ export const ai = getAI();
 // ✅ FORCE FLOW REGISTRATION (CRITICAL FOR VERCEL)
 // These imports ensure that Vercel's bundler includes the flow definitions
 // in the serverless function, preventing them from being tree-shaken away.
-import './flows/fetch-title-info-flow';
-import './flows/fetch-top-titles-flow';
-import './flows/search-titles-flow';
-import './flows/refresh-title-info-flow';
+// We use a function to avoid circular dependency issues during module evaluation.
+export function registerFlows() {
+    if (typeof window === 'undefined') {
+        require('./flows/fetch-title-info-flow');
+        require('./flows/fetch-top-titles-flow');
+        require('./flows/search-titles-flow');
+        require('./flows/refresh-title-info-flow');
+    }
+}
+// Call it immediately for side-effects to ensure registration
+registerFlows();
