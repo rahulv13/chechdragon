@@ -179,7 +179,15 @@ const fetchTitleInfoFlow = ai.defineFlow(
         }
       });
 
-      if (!res.ok) throw new Error(`Asura Comic fetch failed with status: ${res.status}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error('Series not found on Asura Scans. Please check the URL. Note: Asura URLs now typically end with a unique ID (e.g., "-1234abcd").');
+        }
+        if (res.status === 403) {
+          throw new Error('Access to Asura Scans was denied (likely Cloudflare protection). Please try again later or add the title manually.');
+        }
+        throw new Error(`Asura Comic fetch failed with status: ${res.status}`);
+      }
       const html = await res.text();
 
       // Extract JSON data using the verified regex
@@ -192,6 +200,27 @@ const fetchTitleInfoFlow = ai.defineFlow(
           imageUrl: complexMatch.groups.imageUrl,
           total: parseInt(complexMatch.groups.total, 10),
           type: 'Manhwa'
+        };
+      }
+
+      // Fallback: Try Meta Tags (Open Graph)
+      const ogTitleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+      const ogImageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+
+      if (ogTitleMatch) {
+        let title = ogTitleMatch[1].replace(' - Asura Scans', '').trim();
+        const imageUrl = ogImageMatch ? ogImageMatch[1] : '';
+
+        // Try to find chapter count in a looser way if the strict regex failed
+        // Often found in the JSON as \"chapters_count\":123
+        const countMatch = html.match(/\\"chapters_count\\":(\d+)/);
+        const total = countMatch ? parseInt(countMatch[1], 10) : 0;
+
+        return {
+            title,
+            imageUrl,
+            total,
+            type: 'Manhwa'
         };
       }
 
