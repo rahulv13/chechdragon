@@ -383,7 +383,9 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
       <div className="p-4 space-y-2 flex-grow flex flex-col justify-end">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} {totalDisplay}
+            {isSearchResult
+              ? `${item.total || '?'} ${item.type === 'Anime' ? (item.total === 1 ? 'Episode' : 'Episodes') : (item.total === 1 ? 'Chapter' : 'Chapters')}`
+              : `${item.type === 'Anime' ? 'Episode' : 'Chapter'} ${item.progress} ${totalDisplay}`}
           </span>
           <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
         </div>
