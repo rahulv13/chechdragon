@@ -169,8 +169,38 @@ const fetchTitleInfoFlow = ai.defineFlow(
         };
     }
 
-    // 4. If no specific API path matches, throw an error.
-    throw new Error('Unsupported URL. Only MangaDex, AniList, and Anikai links are currently supported for auto-fetching.');
+    // 4. Asura Comic Scraper
+    if (parsedUrl.hostname.includes('asuracomic.net')) {
+      console.log(`[Flow] Asura Comic URL detected.`);
+
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        }
+      });
+
+      if (!res.ok) throw new Error(`Asura Comic fetch failed with status: ${res.status}`);
+      const html = await res.text();
+
+      // Extract JSON data using the verified regex
+      const complexRegex = /{\\"id\\":\d+,\\"name\\":\\"(?<title>[^"]+)\\",\\"summary\\".*?\\"cover\\":\\"(?<imageUrl>[^"]+)\\".*?\\"chapters_count\\":(?<total>\d+)/;
+      const complexMatch = html.match(complexRegex);
+
+      if (complexMatch && complexMatch.groups) {
+        return {
+          title: complexMatch.groups.title,
+          imageUrl: complexMatch.groups.imageUrl,
+          total: parseInt(complexMatch.groups.total, 10),
+          type: 'Manhwa'
+        };
+      }
+
+      // Fallback: If regex fails, try to extract basic info or throw specific error
+      throw new Error('Could not parse Asura Comic page structure. The site layout may have changed.');
+    }
+
+    // 5. If no specific API path matches, throw an error.
+    throw new Error('Unsupported URL. Only MangaDex, AniList, Anikai, and Asura Comic links are currently supported for auto-fetching.');
   }
 );
 
