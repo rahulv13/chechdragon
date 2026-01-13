@@ -2,6 +2,7 @@
 
 import { getAI } from '@/ai/genkit';
 import { z } from 'genkit';
+import * as cheerio from 'cheerio';
 
 // Define schema types, but do not export them from this server module.
 const FetchTitleInfoInputSchema = z.object({
@@ -223,13 +224,56 @@ const fetchTitleInfoFlow = ai.defineFlow(
             type: 'Manhwa'
         };
       }
-
-      // Fallback: If regex fails, try to extract basic info or throw specific error
-      throw new Error('Could not parse Asura Comic page structure. The site layout may have changed.');
     }
 
-    // 5. If no specific API path matches, throw an error.
-    throw new Error('Unsupported URL. Only MangaDex, AniList, Anikai, and Asura Comic links are currently supported for auto-fetching.');
+    // 5. Generic LLM Scraper Fallback (for everything else)
+    console.log(`[Flow] No specific scraper found. Falling back to Generic LLM Scraper.`);
+    try {
+        const res = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            }
+        });
+
+        if (!res.ok) throw new Error(`Generic fetch failed with status: ${res.status}`);
+        const html = await res.text();
+
+        // Clean HTML to save tokens
+        const $ = cheerio.load(html);
+        $('script, style, svg, path, footer, nav, header').remove();
+        const cleanText = $('body').text().replace(/\s+/g, ' ').slice(0, 15000); // Limit context
+
+        const prompt = `
+        You are an intelligent web scraper. Analyze the following text extracted from a webpage (${url}).
+        Your goal is to extract information about the Anime, Manga, or Manhwa on this page.
+
+        Extract:
+        1. Title: The official English or Romaji title.
+        2. Image URL: The main cover image URL.
+        3. Total: The total number of chapters (for manga/manhwa) or episodes (for anime). Look for "Chapter X", "Ep X", "Total: X". If ongoing, use the latest chapter number found.
+        4. Type: Identify if it is "Anime", "Manga" (Japanese), or "Manhwa" (Korean). Default to "Manga" if unsure.
+
+        Return the data in the requested JSON structure.
+
+        Webpage Content:
+        ${cleanText}
+        `;
+
+        const llmResponse = await ai.generate({
+            prompt: prompt,
+            output: { schema: FetchTitleInfoOutputSchema },
+        });
+
+        if (llmResponse && llmResponse.output) {
+            return llmResponse.output;
+        } else {
+            throw new Error('LLM failed to extract data.');
+        }
+
+    } catch (e: any) {
+        console.error("LLM Scraper Fallback failed:", e);
+        throw new Error('Unsupported URL and Generic Scraper failed. ' + e.message);
+    }
   }
 );
 
