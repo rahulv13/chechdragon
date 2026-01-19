@@ -43,7 +43,13 @@ const fetchTitleInfoFlow = ai.defineFlow(
       if (!match) throw new Error('Invalid MangaDex URL, could not extract ID.');
       const mangaId = match[1];
 
-      const mangaRes = await fetch(`https://api.mangadex.org/manga/${mangaId}`);
+      const options = {
+          headers: {
+              'User-Agent': 'DragList-App/1.0 (https://draglist.com; contact@draglist.com)'
+          }
+      };
+
+      const mangaRes = await fetch(`https://api.mangadex.org/manga/${mangaId}`, options);
       if (!mangaRes.ok) throw new Error(`MangaDex API for manga failed with status: ${mangaRes.status}`);
       const mangaData = await mangaRes.json();
 
@@ -52,7 +58,7 @@ const fetchTitleInfoFlow = ai.defineFlow(
       const coverRel = mangaData.data?.relationships?.find((r: any) => r.type === 'cover_art');
       let imageUrl = 'https://picsum.photos/seed/placeholder/400/600';
       if (coverRel?.id) {
-        const coverRes = await fetch(`https://api.mangadex.org/cover/${coverRel.id}`);
+        const coverRes = await fetch(`https://api.mangadex.org/cover/${coverRel.id}`, options);
         if (coverRes.ok) {
           const coverData = await coverRes.json();
           const coverFileName = coverData.data?.attributes?.fileName;
@@ -158,7 +164,7 @@ const fetchTitleInfoFlow = ai.defineFlow(
         }
 
         // Map Anikai types to our types
-        let type: 'Anime' | 'Manga' | 'Manhwa' = 'Anime';
+        const type: 'Anime' | 'Manga' | 'Manhwa' = 'Anime';
         // Anikai is primarily anime, so we default to Anime.
         // If we ever scrape a site that mixes them, we'd need better logic.
 
@@ -200,7 +206,7 @@ const fetchTitleInfoFlow = ai.defineFlow(
           title: complexMatch.groups.title,
           imageUrl: complexMatch.groups.imageUrl,
           total: parseInt(complexMatch.groups.total, 10),
-          type: 'Manhwa'
+          type: 'Manhwa' as const
         };
       }
 
@@ -209,7 +215,7 @@ const fetchTitleInfoFlow = ai.defineFlow(
       const ogImageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
 
       if (ogTitleMatch) {
-        let title = ogTitleMatch[1].replace(' - Asura Scans', '').trim();
+        const title = ogTitleMatch[1].replace(' - Asura Scans', '').trim();
         const imageUrl = ogImageMatch ? ogImageMatch[1] : '';
 
         // Try to find chapter count in a looser way if the strict regex failed
@@ -221,7 +227,7 @@ const fetchTitleInfoFlow = ai.defineFlow(
             title,
             imageUrl,
             total,
-            type: 'Manhwa'
+            type: 'Manhwa' as const
         };
       }
     }

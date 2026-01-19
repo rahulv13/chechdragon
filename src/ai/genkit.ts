@@ -9,7 +9,7 @@ function createGenkitInstance() {
   console.log('[Genkit] Initializing Genkit instance...');
   return genkit({
     plugins: [googleAI()],
-    model: 'googleai/gemini-2.0-flash', // Updated to the model available to the user's key
+    model: 'googleai/gemini-2.5-flash-preview-09-2025', // Updated to the model available to the user's key
   });
 }
 

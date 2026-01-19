@@ -22,6 +22,7 @@ import {
   BookMarked
 } from 'lucide-react';
 import DashboardCharts from '@/components/dashboard-charts';
+import DashboardImageUpload from '@/components/dashboard-image-upload';
 
 export default function DashboardPage() {
   const firestore = useFirestore();
@@ -185,6 +186,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+        <DashboardImageUpload />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
