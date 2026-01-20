@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useUser, useFirestore, useStorage, useMemoFirebase, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2, ImageIcon } from 'lucide-react';
@@ -52,8 +52,37 @@ export default function DashboardImageUpload() {
     setIsUploading(true);
     try {
       const storageRef = ref(storage, `users/${user.uid}/dashboard-image`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      const downloadURL = await new Promise<string>((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRef, file, {
+          contentType: file.type
+        });
+
+        const timeoutId = setTimeout(() => {
+          uploadTask.cancel();
+          reject(new Error("Upload timed out"));
+        }, 30000); // 30s timeout
+
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log('Upload is ' + progress + '% done');
+          },
+          (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+          },
+          async () => {
+            clearTimeout(timeoutId);
+            try {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            } catch (err) {
+              reject(err);
+            }
+          }
+        );
+      });
 
       updateUserProfile(firestore, user.uid, { dashboardImage: downloadURL });
 
@@ -65,7 +94,7 @@ export default function DashboardImageUpload() {
       console.error('Upload failed:', error);
       toast({
         title: 'Upload failed',
-        description: 'Failed to upload image',
+        description: error.message || 'Failed to upload image',
         variant: 'destructive',
       });
     } finally {
