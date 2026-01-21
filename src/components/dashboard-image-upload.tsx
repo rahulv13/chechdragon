@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useUser, useFirestore, useStorage, useMemoFirebase, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+// import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'; // Removed direct storage use
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2, ImageIcon } from 'lucide-react';
@@ -14,7 +14,7 @@ export default function DashboardImageUpload() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const storage = useStorage();
+  // const storage = useStorage(); // No longer needed
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,7 +27,7 @@ export default function DashboardImageUpload() {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user || !storage || !firestore) return;
+    if (!file || !user || !firestore) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -39,7 +39,7 @@ export default function DashboardImageUpload() {
       return;
     }
 
-    // Validate file size (e.g. 5MB)
+    // Validate file size (e.g. 4.5MB limit for Server Actions/API routes usually, we keep 5MB limit but warn if it fails)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: 'File too large',
@@ -51,38 +51,25 @@ export default function DashboardImageUpload() {
 
     setIsUploading(true);
     try {
-      const storageRef = ref(storage, `users/${user.uid}/dashboard-image`);
+      const idToken = await user.getIdToken();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('path', `users/${user.uid}/dashboard-image`);
 
-      const downloadURL = await new Promise<string>((resolve, reject) => {
-        const uploadTask = uploadBytesResumable(storageRef, file, {
-          contentType: file.type
-        });
-
-        const timeoutId = setTimeout(() => {
-          uploadTask.cancel();
-          reject(new Error("Upload timed out"));
-        }, 30000); // 30s timeout
-
-        uploadTask.on('state_changed',
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log('Upload is ' + progress + '% done');
-          },
-          (error) => {
-            clearTimeout(timeoutId);
-            reject(error);
-          },
-          async () => {
-            clearTimeout(timeoutId);
-            try {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(url);
-            } catch (err) {
-              reject(err);
-            }
-          }
-        );
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: formData,
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const { downloadURL } = await response.json();
 
       updateUserProfile(firestore, user.uid, { dashboardImage: downloadURL });
 
