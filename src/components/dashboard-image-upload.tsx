@@ -1,9 +1,8 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { useUser, useFirestore, useStorage, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
-// import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'; // Removed direct storage use
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2, ImageIcon } from 'lucide-react';
@@ -14,7 +13,6 @@ export default function DashboardImageUpload() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  // const storage = useStorage(); // No longer needed
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,11 +37,11 @@ export default function DashboardImageUpload() {
       return;
     }
 
-    // Validate file size (e.g. 4.5MB limit for Server Actions/API routes usually, we keep 5MB limit but warn if it fails)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (e.g. 4.5MB limit for Server Actions/API routes usually, we enforce 4MB to be safe)
+    if (file.size > 4 * 1024 * 1024) {
       toast({
         title: 'File too large',
-        description: 'Image must be less than 5MB',
+        description: 'Image must be less than 4MB',
         variant: 'destructive',
       });
       return;
