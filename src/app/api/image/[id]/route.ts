@@ -1,7 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import Image from '@/models/Image';
+import clientPromise from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
+
+export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest,
@@ -14,20 +16,38 @@ export async function GET(
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
     }
 
-    await dbConnect();
+    const client = await clientPromise;
+    const db = client.db();
+    const imagesCollection = db.collection('images');
 
-    const image = await Image.findById(id);
+    let objectId;
+    try {
+        objectId = new ObjectId(id);
+    } catch (e) {
+        return NextResponse.json({ error: 'Invalid Image ID' }, { status: 400 });
+    }
+
+    const image = await imagesCollection.findOne({ _id: objectId });
 
     if (!image) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 });
     }
 
-    // Convert Buffer to headers for correct display
+    // Convert Binary to compatible response body
+    // image.data is likely a Binary object
+    let responseData: BodyInit;
+
+    if (image.data && image.data.buffer) {
+        responseData = image.data.buffer;
+    } else {
+        responseData = new Uint8Array(0);
+    }
+
     const headers = new Headers();
     headers.set('Content-Type', image.contentType);
     headers.set('Cache-Control', 'public, max-age=31536000, immutable');
 
-    return new NextResponse(image.data, {
+    return new NextResponse(responseData, {
       status: 200,
       headers: headers,
     });
