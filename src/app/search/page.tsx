@@ -439,7 +439,7 @@ export default function SearchPage() {
          {isDropdownOpen && !isSearching && searchResults.length === 0 && query && (
           <Card className="absolute top-full mt-2 w-full z-50">
             <div className="p-4 text-center text-muted-foreground">
-              No results found for "{query}".
+              No results found for &quot;{query}&quot;.
             </div>
           </Card>
         )}
