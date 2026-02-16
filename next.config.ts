@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -95,6 +96,23 @@ const nextConfig: NextConfig = {
     buildActivityPosition: 'bottom-right',
   },
   output: 'standalone',
+  webpack: (config, { isServer }) => {
+    // Ignore optional dependencies that can cause build issues on edge
+    config.resolve.alias = {
+        ...config.resolve.alias,
+        'aws-crt': false,
+        'mock-aws-s3': false,
+        'nock': false,
+        'socks': false,
+        'snappy': false,
+        '@mongodb-js/zstd': false,
+        '@aws-sdk/credential-providers': false,
+        'gcp-metadata': false,
+        'kerberos': false,
+        'mongodb-client-encryption': false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
