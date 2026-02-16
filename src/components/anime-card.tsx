@@ -209,7 +209,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete "{item.title}" from your lists.
+                      This action cannot be undone. This will permanently delete &quot;{item.title}&quot; from your lists.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -368,6 +368,14 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
         <div className="absolute bottom-0 left-0 p-4">
           <CardTitle className="text-lg font-bold text-white drop-shadow-lg">
             {item.title}
+            {item.imageHint && (
+               <div className="hidden group-hover:block absolute bg-black p-2 rounded text-xs">
+                  <span className="text-sm font-medium">&quot;{item.imageHint}&quot;</span>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Used to generate &quot;{item.title}&quot;
+                  </p>
+               </div>
+            )}
           </CardTitle>
         </div>
         {item.score > 0 && (
@@ -383,7 +391,9 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
       <div className="p-4 space-y-2 flex-grow flex flex-col justify-end">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} {totalDisplay}
+            {isSearchResult
+              ? `${item.total || '?'} ${item.type === 'Anime' ? (item.total === 1 ? 'Episode' : 'Episodes') : (item.total === 1 ? 'Chapter' : 'Chapters')}`
+              : `${item.type === 'Anime' ? 'Episode' : 'Chapter'} ${item.progress} ${totalDisplay}`}
           </span>
           <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
         </div>

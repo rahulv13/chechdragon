@@ -91,7 +91,8 @@ const nextConfig: NextConfig = {
     ],
   },
   devIndicators: {
-    position: 'bottom-right',
+    buildActivity: true,
+    buildActivityPosition: 'bottom-right',
   },
   output: 'standalone',
 };

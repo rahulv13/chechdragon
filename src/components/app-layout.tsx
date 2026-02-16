@@ -12,6 +12,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
+import { useState } from 'react';
 
 import {
   Sidebar,
@@ -37,6 +38,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAuth } from 'firebase/auth';
 import { DraglistLogo } from '@/components/icons';
+import { SettingsDialog } from '@/components/settings-dialog';
 
 const navItems = [
   {
@@ -65,6 +67,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const auth = useAuth();
   const { user } = useUser();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleLogout = () => {
     // Clear the secret section's unlocked status from localStorage on logout.
@@ -142,7 +145,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>
+              <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
@@ -164,6 +167,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
         <main className="flex-1 flex-col overflow-auto">{children}</main>
       </SidebarInset>
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </SidebarProvider>
   );
 }

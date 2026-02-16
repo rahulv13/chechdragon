@@ -101,7 +101,7 @@ const searchAnilist = async (
       title: m.title.english || m.title.romaji,
       imageUrl: m.coverImage.large,
       total: total ?? 0,
-      type: detectedType,
+      type: detectedType as 'Anime' | 'Manga' | 'Manhwa',
     };
   }).slice(0, 10); // Limit to 10 results total
 };

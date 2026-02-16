@@ -112,3 +112,15 @@ export const updateUserSecretPassword = (
     // Use setDoc with merge:true to create, update, or clear the field
     setDocumentNonBlocking(userDocRef, { secretPassword: password }, { merge: true });
 };
+
+export const updateUserProfile = (
+    firestore: Firestore,
+    userId: string,
+    data: { dashboardImage?: string }
+) => {
+    if (!userId) {
+        throw new Error('User must be logged in to update their profile.');
+    }
+    const userDocRef = doc(firestore, 'users', userId);
+    setDocumentNonBlocking(userDocRef, data, { merge: true });
+};
