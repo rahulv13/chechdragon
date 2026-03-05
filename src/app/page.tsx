@@ -71,7 +71,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">Key Features</div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need, Nothing You Don't</h2>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need, Nothing You Don&apos;t</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Draglist is built for fans who want a beautiful, simple, and powerful way to keep track of their watching and reading habits.
                 </p>
@@ -83,7 +83,7 @@ export default function LandingPage() {
                   <Clapperboard className="w-12 h-12 mb-4 text-primary" />
                   <h3 className="text-xl font-bold">Anime & Manga Lists</h3>
                   <p className="text-muted-foreground mt-2">
-                    Keep separate, organized lists for everything you're watching and reading.
+                    Keep separate, organized lists for everything you&apos;re watching and reading.
                   </p>
                 </CardContent>
               </Card>
