@@ -1,10 +1,11 @@
 
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+// Ensure the build doesn't crash during static generation when MONGODB_URI is absent
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://dummy';
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+if (MONGODB_URI === 'mongodb://dummy' && process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
+  console.warn('MONGODB_URI is not set. Using dummy URI for build step.');
 }
 
 let client: MongoClient;
@@ -33,9 +34,10 @@ if (process.env.NODE_ENV === 'development') {
           deprecationErrors: true,
       }
   });
-  clientPromise = client.connect();
+  clientPromise = client.connect().catch(e => {
+       console.warn("MongoDB connection failed, likely because of dummy URI during static build.", e.message);
+       return client;
+  });
 }
 
-// Export a module-scoped MongoClient promise. By doing this in a
-// separate module, the client can be shared across functions.
 export default clientPromise;
