@@ -179,6 +179,7 @@ export default function SearchPage() {
       total: item.total || 0,
       imageUrl: item.imageUrl,
       isSecret: false,
+      sourceUrl: item.sourceUrl,
     });
     toast({
       title: 'Title Added',
@@ -428,7 +429,10 @@ export default function SearchPage() {
                   <Image src={item.imageUrl} alt={item.title} width={40} height={60} className="rounded-sm aspect-[2/3] object-cover" />
                   <div className="flex-grow">
                     <p className="font-semibold">{item.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.type} &bull; {item.total || '?'} {item.type === 'Anime' ? 'eps' : 'chs'}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {item.type} &bull; {item.total || '?'} {item.type === 'Anime' ? 'eps' : 'chs'}
+                        {item.sourceUrl && item.sourceUrl.includes('asurascans.com') && ' • Asura Scans'}
+                    </p>
                   </div>
                   <Plus className="h-5 w-5 text-muted-foreground" />
                 </div>
