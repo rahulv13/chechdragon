@@ -1,105 +1,64 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import { Binary } from 'mongodb';
+import { firebaseConfig } from '@/firebase/config';
 
-export const runtime = 'nodejs';
-
-// Helper to concatenate Uint8Arrays
-function concatUint8Arrays(arrays: Uint8Array[]): Uint8Array {
-  const totalLength = arrays.reduce((acc, val) => acc + val.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const arr of arrays) {
-    result.set(arr, offset);
-    offset += arr.length;
-  }
-  return result;
-}
+export const runtime = 'edge';
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const idToken = authHeader.split('Bearer ')[1];
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    const uploadId = formData.get('uploadId') as string;
-    const indexStr = formData.get('chunkIndex') as string;
-    const totalChunksStr = formData.get('totalChunks') as string;
     const userId = formData.get('userId') as string;
 
-    if (!file || !uploadId || !indexStr || !totalChunksStr) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    if (!file || !userId) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const index = parseInt(indexStr);
-    const totalChunks = parseInt(totalChunksStr);
-
-    const client = await clientPromise;
-    const db = client.db();
-
-    // Convert File chunk to Uint8Array
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    const binaryData = new Binary(uint8Array);
-
-    const chunksCollection = db.collection('chunks');
-    const imagesCollection = db.collection('images');
-
-    // Save chunk
-    // Note: We use updateOne with upsert to prevent duplicates if retried
-    await chunksCollection.updateOne(
-      { uploadId, index },
-      {
-        $set: {
-          uploadId,
-          index,
-          data: binaryData,
-          createdAt: new Date()
-        }
-      },
-      { upsert: true }
-    );
-
-    // Check if we have all chunks
-    const count = await chunksCollection.countDocuments({ uploadId });
-
-    if (count === totalChunks) {
-      // All chunks received. Assemble!
-      const chunks = await chunksCollection.find({ uploadId }).sort({ index: 1 }).toArray();
-
-      // Concatenate chunks
-      // chunk.data is likely a Binary object, so accessing .buffer (which is Uint8Array or Buffer)
-      // Binary.buffer returns the underlying buffer.
-      const chunkArrays = chunks.map((c: any) => {
-          // c.data is Binary. read(0, length) or .buffer
-          if (c.data && c.data.buffer) {
-             return new Uint8Array(c.data.buffer);
-          }
-          return new Uint8Array(0);
-      });
-
-      const completeData = concatUint8Arrays(chunkArrays);
-
-      // Create Image
-      const newImage = await imagesCollection.insertOne({
-        userId: userId || 'unknown',
-        data: new Binary(completeData),
-        contentType: file.type || 'application/octet-stream',
-        createdAt: new Date()
-      });
-
-      // Cleanup chunks
-      await chunksCollection.deleteMany({ uploadId });
-
-      // Return the new image URL
-      const imageUrl = `/api/image/${newImage.insertedId}`;
-
-      return NextResponse.json({ downloadURL: imageUrl, completed: true });
+    // Verify it doesn't exceed 4MB
+    if (file.size > 4 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large' }, { status: 413 });
     }
 
-    return NextResponse.json({ completed: false, message: `Chunk ${index + 1}/${totalChunks} received` });
+    const bucket = firebaseConfig.storageBucket;
+    if (!bucket) {
+      return NextResponse.json({ error: 'Storage bucket not configured' }, { status: 500 });
+    }
+
+    // Generate unique name
+    const ext = file.name.split('.').pop() || 'png';
+    const filePath = `users/${userId}/dashboard-${Date.now()}.${ext}`;
+
+    // Upload to Firebase Storage JSON API
+    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodeURIComponent(filePath)}`;
+
+    const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${idToken}`,
+            'Content-Type': file.type,
+        },
+        body: file,
+    });
+
+    if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('Firebase Storage upload failed:', uploadResponse.status, errorText);
+        return NextResponse.json({ error: 'Failed to upload to storage: ' + uploadResponse.status }, { status: uploadResponse.status });
+    }
+
+    const uploadData = await uploadResponse.json();
+
+    // Generate the public download URL
+    const downloadToken = uploadData.downloadTokens;
+    const downloadURL = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(filePath)}?alt=media&token=${downloadToken}`;
+
+    return NextResponse.json({ downloadURL, completed: true });
 
   } catch (error: any) {
     console.error('Upload error:', error);

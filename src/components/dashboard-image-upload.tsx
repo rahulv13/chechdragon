@@ -39,10 +39,10 @@ export default function DashboardImageUpload() {
     }
 
     // Validate file size (e.g. 6MB is now allowed because we use chunking)
-    if (file.size > 6 * 1024 * 1024) {
+    if (file.size > 4 * 1024 * 1024) {
       toast({
         title: 'File too large',
-        description: 'Image must be less than 6MB',
+        description: 'Image must be less than 4MB',
         variant: 'destructive',
       });
       return;
@@ -53,46 +53,28 @@ export default function DashboardImageUpload() {
 
     try {
       const idToken = await user.getIdToken();
-      const chunkSize = 1024 * 1024; // 1MB chunks
-      const totalChunks = Math.ceil(file.size / chunkSize);
-      const uploadId = `${user.uid}_${Date.now()}`; // Unique upload ID
 
-      let downloadURL = '';
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      formData.append('userId', user.uid);
 
-      for (let i = 0; i < totalChunks; i++) {
-        const start = i * chunkSize;
-        const end = Math.min(start + chunkSize, file.size);
-        const chunk = file.slice(start, end);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: formData,
+      });
 
-        const formData = new FormData();
-        formData.append('file', chunk, file.name); // Important: pass original name if possible, but type matters more
-        formData.append('uploadId', uploadId);
-        formData.append('chunkIndex', i.toString());
-        formData.append('totalChunks', totalChunks.toString());
-        formData.append('userId', user.uid);
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${idToken}`, // Still send auth for good measure
-          },
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Upload failed');
-        }
-
-        const data = await response.json();
-
-        // Update progress
-        setUploadProgress(Math.round(((i + 1) / totalChunks) * 100));
-
-        if (data.completed) {
-          downloadURL = data.downloadURL;
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
       }
+
+      const data = await response.json();
+      const downloadURL = data.downloadURL;
+
+      setUploadProgress(100);
 
       if (downloadURL) {
         updateUserProfile(firestore, user.uid, { dashboardImage: downloadURL });
